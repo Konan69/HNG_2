@@ -7,7 +7,8 @@ import { requireAuth, generateAccessToken } from "./src/middleware/jwt";
 import { prisma } from "./src/server";
 
 // Mock middleware to set req.user
-app.use((req, res, next) => {
+
+app.use((req: any, res, next) => {
   req.user = {
     userId: "123456", // Mock logged-in user ID
     orgIds: ["org1", "org2"], // Mock organizations user has access to
@@ -16,7 +17,7 @@ app.use((req, res, next) => {
 });
 
 // Mock route that requires authentication
-app.get("/api/organisations/:orgId", (req, res) => {
+app.get("/api/organisations/:orgId", (req: any, res) => {
   const { orgId } = req.params;
   if (!(req.user as any).orgIds.includes(orgId)) {
     return res.status(403).send("Unauthorized");
