@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node dist/src/server.js",
     "test": "jest",
-    "dev": "nodemon"
+    "dev": "nodemon",
+    "build": "rimraf dist && tsc -b"
   },
   "jest": {
     "testEnvironment": "node",
