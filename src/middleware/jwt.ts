@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import jwt from "jsonwebtoken";
 
-const secret = process.env.jwtPrivateKey;
+const secret = process.env.jwtPrivateKey || "test_secret";
 type User = Prisma.UserGetPayload<{
   select: {
     userId: true;
@@ -14,13 +14,18 @@ type User = Prisma.UserGetPayload<{
 }>;
 
 export const generateAccessToken = (user: User) => {
-  return jwt.sign(
-    { userId: user.userId, orgIds: user.orgs.map((org) => org.orgId) },
-    secret!,
-    {
-      expiresIn: "10m",
-    },
-  );
+  try {
+    console.log(secret);
+    const token = jwt.sign(
+      { userId: user.userId, orgIds: user.orgs.map((org) => org.orgId) },
+      secret!,
+      { expiresIn: "10m" },
+    );
+    return token;
+  } catch (error) {
+    console.error("Error generating access token:", error);
+    throw error;
+  }
 };
 
 export const requireAuth = (req: any, res: any, next: any) => {

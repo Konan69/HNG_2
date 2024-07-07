@@ -19,18 +19,29 @@ app.post(
   "/auth/register",
   validateUser(userRegisterSchema),
   async (req, res) => {
-    try {
-      const { firstname, lastname, email, password, phone } = req.body;
+    const { firstname, lastname, email, password, phone } = req.body;
 
+    // Check if the email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: email },
+    });
+
+    if (existingUser) {
+      return res
+        .status(422)
+        .send({ message: "User already exists", status: "Bad request" });
+    }
+
+    try {
       // Hash the password
       const salt = await bcryptjs.genSalt(10);
       const hashedPassword = await bcryptjs.hash(password, salt);
 
-      const userData: Prisma.UserCreateInput = {
+      const userData = {
         firstname,
         lastname,
         email,
-        password: hashedPassword, // Store the hashed password
+        password: hashedPassword,
         phone,
       };
 
@@ -45,10 +56,10 @@ app.post(
         },
       });
 
-      // Next, create the default organization for the user
+      // Create the default organization for the user
       const orgData = {
         name: `${firstname}'s Organisation`,
-        description: `default organisation for ${firstname}`,
+        description: `Default organisation for ${firstname}`,
         createdBy: user.userId,
         users: {
           connect: { userId: user.userId },
@@ -66,55 +77,53 @@ app.post(
 
       const userWithOrg = { ...user, orgs: [newOrg] };
 
-      const accessToken = generateAccessToken(userWithOrg); // Generate an access token
+      // Generate an access token
+      const accessToken = generateAccessToken(userWithOrg);
 
       res.status(201).json({
         status: "success",
         message: "Registration successful",
         data: {
           accessToken: accessToken,
-          user: userWithOrg,
-          // organization: user.orgs[0], // Include the first (and only) organization
+          user: user,
         },
       });
-      console.log({ user: userWithOrg });
     } catch (error) {
-      console.error(error);
-      res.status(400).json({
-        status: "Bad request",
-        message: "Registration unsuccessful",
-        statusCode: 400,
+      console.error("Error in registration:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Registration failed",
       });
     }
   },
 );
 
 app.post("/auth/login", validateUser(userLoginSchema), async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    res.status(400).send({ status: "Bad request" });
+    throw new Error("You must provide an email and a password.");
+  }
+  const user = await prisma.user.findUnique({
+    where: { email: email },
+    include: {
+      orgs: true,
+    },
+  });
+
+  if (!user) {
+    res
+      .status(403)
+      .send({ status: "Bad request", message: "Invalid login credentials." });
+    return;
+  }
+  const validPassword = await bcryptjs.compare(
+    req.body.password,
+    user.password,
+  );
+  if (!validPassword) return res.status(401).send("invalid email or password");
+
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      res.status(400);
-      throw new Error("You must provide an email and a password.");
-    }
-    const user = await prisma.user.findUnique({
-      where: { email: email },
-      include: {
-        orgs: true,
-      },
-    });
-
-    if (!user) {
-      res.status(403);
-      throw new Error("Invalid login credentials.");
-    }
-
-    const validPassword = await bcryptjs.compare(
-      req.body.password,
-      user.password,
-    );
-    if (!validPassword)
-      return res.status(400).send("invalid email or password");
-
     console.log(user);
     return res.status(200).send({
       status: "success",
@@ -172,6 +181,35 @@ app.post(
         statusCode: 400,
       });
     }
+  },
+);
+
+app.post(
+  "/api/organisations/:orgId/users",
+  requireAuth,
+  async (req: any, res: any) => {
+    const { orgId } = req.params;
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).send({ message: "User ID is required" });
+    }
+    const data = await prisma.organisation.update({
+      where: {
+        orgId: orgId,
+      },
+      data: {
+        users: {
+          connect: {
+            userId: userId,
+          },
+        },
+      },
+    });
+
+    res.status(200).send({
+      status: "success",
+      message: "User added to organisation successfully",
+    });
   },
 );
 
@@ -324,3 +362,5 @@ app.get(
   },
 );
 app.listen(3000, () => console.log("listening on port 3000"));
+
+export default app;
