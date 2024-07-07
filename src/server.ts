@@ -233,5 +233,55 @@ app.get("/api/organisations", requireAuth, async (req: any, res: any) => {
     });
   }
 });
-// app.get
+
+app.get(
+  "/api/organisations/:orgId",
+  requireAuth,
+  async (req: any, res: any) => {
+    try {
+      const { orgId } = req.params;
+      const userId = (req.user as any).userId;
+      // Check if the user belongs to the organization
+      const org = await prisma.organisation.findUnique({
+        where: {
+          orgId: orgId,
+          users: {
+            some: {
+              userId: userId,
+            },
+          },
+        },
+        select: {
+          orgId: true,
+          name: true,
+          description: true,
+        },
+      });
+
+      if (!org) {
+        return res.status(403).json({
+          status: "fail",
+          message: "Access denied. You do not belong to this organization.",
+        });
+      }
+
+      return res.status(200).json({
+        status: "success",
+        message: "Organization retrieved successfully",
+        data: {
+          orgId: org.orgId,
+          name: org.name,
+          description: org.description,
+        },
+      });
+    } catch (error) {
+      //error
+      console.error("Error fetching organisations:", error);
+      res.status(500).send({
+        status: "error",
+        message: "An error occurred while fetching organisation",
+      });
+    }
+  },
+);
 app.listen(3000, () => console.log("listening on port 3000"));
