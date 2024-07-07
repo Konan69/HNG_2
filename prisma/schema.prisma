@@ -14,15 +14,20 @@ datasource db {
 }
 
 model User {
-  userId      String @id @default(uuid())
+  userId      String @id @default(cuid())
   firstname   String 
-  lastname    String
+  lastname    String   
   email       String @unique
   password    String
   phone       String?
+  orgs        Organisation[]
+ 
 
 }
 
-// model Organisation {
-
-// }
+model Organisation {
+  orgId       String @id @default(cuid())
+  name        String
+  description String?
+  users       User[]
+}

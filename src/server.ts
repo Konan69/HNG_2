@@ -1,7 +1,7 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import express from "express";
 import bcryptjs from "bcryptjs";
-import { generateAccessToken } from "./middleware/auth";
+import { generateAccessToken, requireAuth } from "./middleware/auth";
 import { validateUser } from "./middleware/middleware";
 import { userRegisterSchema, userLoginSchema } from "./middleware/joi";
 
@@ -28,6 +28,12 @@ app.post(
         email,
         password: hashedPassword, // Store the hashed password
         phone,
+        orgs: {
+          create: {
+            name: `${firstname}'s Organisation`,
+            description: `default organisation for ${firstname}`,
+          },
+        },
       };
 
       const user = await prisma.user.create({
@@ -38,6 +44,12 @@ app.post(
           lastname: true,
           email: true,
           phone: true,
+          orgs: {
+            select: {
+              name: true,
+              orgId: true,
+            },
+          },
         },
       });
 
@@ -49,9 +61,10 @@ app.post(
         data: {
           accessToken: accessToken,
           user: user,
+          // organization: user.orgs[0], // Include the first (and only) organization
         },
       });
-      console.log(user);
+      console.log({ user: user });
     } catch (error) {
       console.error(error);
       res.status(400).json({
@@ -72,6 +85,9 @@ app.post("/auth/login", validateUser(userLoginSchema), async (req, res) => {
     }
     const user = await prisma.user.findUnique({
       where: { email: email },
+      include: {
+        orgs: true,
+      },
     });
 
     if (!user) {
@@ -86,6 +102,7 @@ app.post("/auth/login", validateUser(userLoginSchema), async (req, res) => {
     if (!validPassword)
       return res.status(400).send("invalid email or password");
 
+    console.log(user);
     return res.status(200).send({
       status: "success",
       message: "Login successful",
@@ -109,4 +126,27 @@ app.post("/auth/login", validateUser(userLoginSchema), async (req, res) => {
     });
   }
 });
+
+app.get("/api/users/:id", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({
+      where: {
+        userId: id,
+      },
+    });
+    res.status(200).send({
+      status: "success",
+      message: "User retrieved successfully",
+      data: {
+        userId: user?.userId,
+        firstName: user?.firstname,
+        lastName: user?.lastname,
+        email: user?.email,
+        phone: user?.phone,
+      },
+    });
+  } catch (error) {}
+});
+
 app.listen(3000, () => console.log("listening on port 3000"));
