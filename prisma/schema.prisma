@@ -30,4 +30,5 @@ model Organisation {
   name        String
   description String?
   users       User[]
+  createdBy   String?
 }

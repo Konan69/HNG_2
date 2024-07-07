@@ -1,7 +1,7 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import express from "express";
 import bcryptjs from "bcryptjs";
-import { generateAccessToken, requireAuth } from "./middleware/auth";
+import { generateAccessToken, requireAuth } from "./middleware/jwt";
 import { validateUser } from "./middleware/middleware";
 import { userRegisterSchema, userLoginSchema } from "./middleware/joi";
 
@@ -28,12 +28,6 @@ app.post(
         email,
         password: hashedPassword, // Store the hashed password
         phone,
-        orgs: {
-          create: {
-            name: `${firstname}'s Organisation`,
-            description: `default organisation for ${firstname}`,
-          },
-        },
       };
 
       const user = await prisma.user.create({
@@ -44,27 +38,42 @@ app.post(
           lastname: true,
           email: true,
           phone: true,
-          orgs: {
-            select: {
-              name: true,
-              orgId: true,
-            },
-          },
         },
       });
 
-      const accessToken = generateAccessToken(user); // Generate an access token
+      // Next, create the default organization for the user
+      const orgData = {
+        name: `${firstname}'s Organisation`,
+        description: `default organisation for ${firstname}`,
+        createdBy: user.userId,
+        users: {
+          connect: { userId: user.userId },
+        },
+      };
+
+      const newOrg = await prisma.organisation.create({
+        data: orgData,
+        select: {
+          name: true,
+          orgId: true,
+          createdBy: true,
+        },
+      });
+
+      const userWithOrg = { ...user, orgs: [newOrg] };
+
+      const accessToken = generateAccessToken(userWithOrg); // Generate an access token
 
       res.status(201).json({
         status: "success",
         message: "Registration successful",
         data: {
           accessToken: accessToken,
-          user: user,
+          user: userWithOrg,
           // organization: user.orgs[0], // Include the first (and only) organization
         },
       });
-      console.log({ user: user });
+      console.log({ user: userWithOrg });
     } catch (error) {
       console.error(error);
       res.status(400).json({
@@ -127,26 +136,73 @@ app.post("/auth/login", validateUser(userLoginSchema), async (req, res) => {
   }
 });
 
-app.get("/api/users/:id", requireAuth, async (req, res) => {
+app.get("/api/users/:id", requireAuth, async (req: any, res: any) => {
   try {
     const { id } = req.params;
-    const user = await prisma.user.findUnique({
-      where: {
-        userId: id,
-      },
+    console.log(id);
+    const loggedInUserId = (req.user as any).userId;
+
+    // Fetch the requested user
+    const requestedUser = await prisma.user.findUnique({
+      where: { userId: id },
+      include: { orgs: { select: { orgId: true, name: true } } },
     });
+
+    if (!requestedUser) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    // Check if requested user is the logged-in user
+    const isSameUser = loggedInUserId === id;
+
+    if (!isSameUser) {
+      // Fetch the organizations created by the logged-in user
+      const createdOrganizations = await prisma.organisation.findMany({
+        where: { createdBy: loggedInUserId },
+        select: { orgId: true },
+      });
+
+      const createdOrgIds = createdOrganizations.map((org) => org.orgId);
+
+      // Check if the requested user is in any of the organizations created by the logged-in user
+      const isInCreatedOrg = requestedUser.orgs.some((org) =>
+        createdOrgIds.includes(org.orgId),
+      );
+
+      // Check if both users are in the same organization
+      const commonOrgs = requestedUser.orgs.filter((org) =>
+        (req.user as any).orgIds.includes(org.orgId),
+      );
+      const isInSameOrg = commonOrgs.length > 0;
+
+      if (!isInCreatedOrg && !isInSameOrg) {
+        return res.status(403).send({ message: "Forbidden" });
+      }
+    }
+
     res.status(200).send({
       status: "success",
       message: "User retrieved successfully",
       data: {
-        userId: user?.userId,
-        firstName: user?.firstname,
-        lastName: user?.lastname,
-        email: user?.email,
-        phone: user?.phone,
+        userId: requestedUser.userId,
+        firstName: requestedUser.firstname,
+        lastName: requestedUser.lastname,
+        email: requestedUser.email,
+        phone: requestedUser.phone,
+        orgs: requestedUser.orgs.map((org) => ({
+          name: org.name,
+          orgId: org.orgId,
+        })),
       },
     });
-  } catch (error) {}
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Internal server error" });
+  }
 });
 
+app.get("/api/organisations", requireAuth, async (req: any, res: any) => {
+  try {
+  } catch (error) {}
+});
 app.listen(3000, () => console.log("listening on port 3000"));

@@ -1,5 +1,4 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "../server";
 import jwt from "jsonwebtoken";
 
 const secret = process.env.jwtPrivateKey;
@@ -19,25 +18,30 @@ export const generateAccessToken = (user: User) => {
     { userId: user.userId, orgIds: user.orgs.map((org) => org.orgId) },
     secret!,
     {
-      expiresIn: "5m",
+      expiresIn: "10m",
     },
   );
 };
 
 export const requireAuth = (req: any, res: any, next: any) => {
-  const accessToken = req.accessToken;
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "Unauthorized" });
+  }
+  const accessToken = authHeader.split(" ")[1];
+
   if (!accessToken) {
     return res.status(401).send({ message: "Unauthorized" });
   }
+
   try {
     jwt.verify(accessToken, secret!, (err: any, decoded: any) => {
       if (err) {
         return res.status(401).send({ message: err.message });
       }
-      console.log(decoded);
-      return decoded;
+      req.user = decoded;
+      next();
     });
-    next();
   } catch (error) {
     return res.status(401).send({ message: "Unauthorized" });
   }
