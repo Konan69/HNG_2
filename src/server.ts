@@ -161,13 +161,16 @@ app.post(
           description: true,
         },
       });
-
       res
         .status(201)
         .send({ message: "Organisation created successfully", data: org });
     } catch (error) {
       console.error(error);
-      res.status(500).send({ message: "error creating organisation" });
+      res.status(400).send({
+        status: "Bad Request",
+        message: "Client Error",
+        statusCode: 400,
+      });
     }
   },
 );
