@@ -35,3 +35,12 @@ export const userLoginSchema = Joi.object({
     "string.empty": "Password is required",
   }),
 });
+
+export const createOrgSchema = Joi.object({
+  name: Joi.string().required().messages({
+    "string.empty": "Name is required",
+  }),
+  description: Joi.string().required().messages({
+    "string.empty": "Description is required",
+  }),
+});

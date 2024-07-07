@@ -3,7 +3,11 @@ import express from "express";
 import bcryptjs from "bcryptjs";
 import { generateAccessToken, requireAuth } from "./middleware/jwt";
 import { validateUser } from "./middleware/middleware";
-import { userRegisterSchema, userLoginSchema } from "./middleware/joi";
+import {
+  userRegisterSchema,
+  userLoginSchema,
+  createOrgSchema,
+} from "./middleware/joi";
 
 export const prisma = new PrismaClient();
 
@@ -135,6 +139,38 @@ app.post("/auth/login", validateUser(userLoginSchema), async (req, res) => {
     });
   }
 });
+
+app.post(
+  "/api/organisations",
+  requireAuth,
+  validateUser(createOrgSchema),
+  async (req: any, res: any) => {
+    try {
+      const UserId = (req.user as any).userId;
+
+      const { name, description } = req.body;
+      const org = await prisma.organisation.create({
+        data: {
+          name,
+          description,
+          createdBy: UserId,
+        },
+        select: {
+          orgId: true,
+          name: true,
+          description: true,
+        },
+      });
+
+      res
+        .status(201)
+        .send({ message: "Organisation created successfully", data: org });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({ message: "error creating organisation" });
+    }
+  },
+);
 
 app.get("/api/users/:id", requireAuth, async (req: any, res: any) => {
   try {
