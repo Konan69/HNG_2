@@ -37,6 +37,7 @@
     "bcryptjs": "^2.4.3",
     "express": "^4.19.2",
     "joi": "^17.13.3",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "rimraf": "^5.0.8"
   }
 }
