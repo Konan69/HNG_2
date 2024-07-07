@@ -3,7 +3,7 @@ import express from "express";
 import bcryptjs from "bcryptjs";
 import { generateAccessToken } from "./middleware/auth";
 import { validateUser } from "./middleware/middleware";
-import { userRegisterSchema } from "./middleware/joi";
+import { userRegisterSchema, userLoginSchema } from "./middleware/joi";
 
 export const prisma = new PrismaClient();
 
@@ -63,7 +63,7 @@ app.post(
   },
 );
 
-app.post("/auth/login", async (req, res) => {
+app.post("/auth/login", validateUser(userLoginSchema), async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
