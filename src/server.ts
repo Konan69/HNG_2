@@ -189,10 +189,6 @@ app.get("/api/users/:id", requireAuth, async (req: any, res: any) => {
         lastName: requestedUser.lastname,
         email: requestedUser.email,
         phone: requestedUser.phone,
-        orgs: requestedUser.orgs.map((org) => ({
-          name: org.name,
-          orgId: org.orgId,
-        })),
       },
     });
   } catch (error) {
@@ -203,6 +199,39 @@ app.get("/api/users/:id", requireAuth, async (req: any, res: any) => {
 
 app.get("/api/organisations", requireAuth, async (req: any, res: any) => {
   try {
-  } catch (error) {}
+    const loggedInUserId = (req.user as any).userId;
+    const orgs = await prisma.organisation.findMany({
+      where: {
+        OR: [
+          { users: { some: { userId: loggedInUserId } } },
+          { createdBy: loggedInUserId },
+        ],
+      },
+      select: {
+        orgId: true,
+        name: true,
+        description: true,
+      },
+    });
+
+    const formattedOrgs = orgs.map((org) => ({
+      orgId: org.orgId,
+      name: org.name,
+      description: org.description,
+    }));
+
+    res.status(200).send({
+      status: "success",
+      message: "User's organisations retrieved successfully",
+      data: { organisations: formattedOrgs },
+    });
+  } catch (error) {
+    console.error("Error fetching user's organisations:", error);
+    res.status(500).send({
+      status: "error",
+      message: "An error occurred while fetching user's organisations",
+    });
+  }
 });
+// app.get
 app.listen(3000, () => console.log("listening on port 3000"));

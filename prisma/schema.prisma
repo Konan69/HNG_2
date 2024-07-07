@@ -21,8 +21,6 @@ model User {
   password    String
   phone       String?
   orgs        Organisation[]
- 
-
 }
 
 model Organisation {
