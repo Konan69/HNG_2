@@ -19,7 +19,7 @@ export const userRegisterSchema = Joi.object({
     "any.invalid": "Name cannot be null",
     "string.empty": "Password is required",
   }),
-  phone: Joi.string().optional(),
+  phone: Joi.string().optional().allow(""),
 });
 
 export const userLoginSchema = Joi.object({

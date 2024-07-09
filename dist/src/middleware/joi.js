@@ -24,7 +24,7 @@ exports.userRegisterSchema = joi_1.default.object({
         "any.invalid": "Name cannot be null",
         "string.empty": "Password is required",
     }),
-    phone: joi_1.default.string().optional(),
+    phone: joi_1.default.string().optional().allow(""),
 });
 exports.userLoginSchema = joi_1.default.object({
     email: joi_1.default.string().required().not(null).messages({
