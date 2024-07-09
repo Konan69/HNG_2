@@ -199,23 +199,27 @@ app.post(
     if (!userId) {
       return res.status(400).send({ message: "User ID is required" });
     }
-    const data = await prisma.organisation.update({
-      where: {
-        orgId: orgId,
-      },
-      data: {
-        users: {
-          connect: {
-            userId: userId,
+    try {
+      const data = await prisma.organisation.update({
+        where: {
+          orgId: orgId,
+        },
+        data: {
+          users: {
+            connect: {
+              userId: userId,
+            },
           },
         },
-      },
-    });
+      });
 
-    res.status(200).send({
-      status: "success",
-      message: "User added to organisation successfully",
-    });
+      res.status(200).send({
+        status: "success",
+        message: "User added to organisation successfully",
+      });
+    } catch (error) {
+      res.status(500).send({ message: "failed to add user to organisation" });
+    }
   },
 );
 

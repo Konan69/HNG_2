@@ -179,22 +179,27 @@ app.post("/api/organisations/:orgId/users", jwt_1.requireAuth, (req, res) => __a
     if (!userId) {
         return res.status(400).send({ message: "User ID is required" });
     }
-    const data = yield exports.prisma.organisation.update({
-        where: {
-            orgId: orgId,
-        },
-        data: {
-            users: {
-                connect: {
-                    userId: userId,
+    try {
+        const data = yield exports.prisma.organisation.update({
+            where: {
+                orgId: orgId,
+            },
+            data: {
+                users: {
+                    connect: {
+                        userId: userId,
+                    },
                 },
             },
-        },
-    });
-    res.status(200).send({
-        status: "success",
-        message: "User added to organisation successfully",
-    });
+        });
+        res.status(200).send({
+            status: "success",
+            message: "User added to organisation successfully",
+        });
+    }
+    catch (error) {
+        res.status(500).send({ message: "failed to add user to organisation" });
+    }
 }));
 app.get("/api/users/:id", jwt_1.requireAuth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
