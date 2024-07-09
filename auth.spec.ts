@@ -31,8 +31,8 @@ describe("User Registration", () => {
 
   it("should register user successfully with default organisation", async () => {
     const userData = {
-      firstname: "John",
-      lastname: "Doe",
+      firstName: "John",
+      lastName: "Doe",
       email: "john.doe@example.com",
       password: "password123",
       phone: "+1234567890",
