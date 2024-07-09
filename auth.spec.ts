@@ -46,7 +46,7 @@ describe("User Registration", () => {
     expect(response.body.status).toBe("success");
     expect(response.body.message).toBe("Registration successful");
     expect(response.body.data.accessToken).toBeDefined();
-    expect(response.body.data.user.firstname).toBe("John");
+    expect(response.body.data.user.firstName).toBe("John");
   });
 });
 describe("User Login", () => {
@@ -119,10 +119,10 @@ describe("Validation", () => {
 
     expect(response.body.errors.length).toBe(4); // 4 required fields
     expect(
-      response.body.errors.some((err: any) => err.field === "firstname"),
+      response.body.errors.some((err: any) => err.field === "firstName"),
     ).toBeTruthy();
     expect(
-      response.body.errors.some((err: any) => err.field === "lastname"),
+      response.body.errors.some((err: any) => err.field === "lastName"),
     ).toBeTruthy();
     expect(
       response.body.errors.some((err: any) => err.field === "email"),
@@ -149,8 +149,8 @@ describe("Duplicate Email or UserID", () => {
 
   it("should fail registration with duplicate email", async () => {
     const duplicateUserData = {
-      firstname: "Jane",
-      lastname: "Smith",
+      firstName: "Jane",
+      lastName: "Smith",
       email: "john.doe@example.com", // Same email as existing user
       password: "password456",
       phone: "+9876543210",
