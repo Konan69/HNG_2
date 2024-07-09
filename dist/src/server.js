@@ -23,7 +23,7 @@ exports.prisma = new client_1.PrismaClient();
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.post("/auth/register", (0, middleware_1.validateUser)(joi_1.userRegisterSchema), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { firstname, lastname, email, password, phone } = req.body;
+    const { firstName, lastName, email, password, phone } = req.body;
     // Check if the email already exists
     const existingUser = yield exports.prisma.user.findUnique({
         where: { email: email },
@@ -38,8 +38,8 @@ app.post("/auth/register", (0, middleware_1.validateUser)(joi_1.userRegisterSche
         const salt = yield bcryptjs_1.default.genSalt(10);
         const hashedPassword = yield bcryptjs_1.default.hash(password, salt);
         const userData = {
-            firstname,
-            lastname,
+            firstname: firstName,
+            lastname: lastName,
             email,
             password: hashedPassword,
             phone,
@@ -56,8 +56,8 @@ app.post("/auth/register", (0, middleware_1.validateUser)(joi_1.userRegisterSche
         });
         // Create the default organization for the user
         const orgData = {
-            name: `${firstname}'s Organisation`,
-            description: `Default organisation for ${firstname}`,
+            name: `${firstName}'s Organisation`,
+            description: `Default organisation for ${firstName}`,
             createdBy: user.userId,
             users: {
                 connect: { userId: user.userId },
@@ -79,7 +79,13 @@ app.post("/auth/register", (0, middleware_1.validateUser)(joi_1.userRegisterSche
             message: "Registration successful",
             data: {
                 accessToken: accessToken,
-                user: user,
+                user: {
+                    userId: user.userId,
+                    firstName: user.firstname,
+                    lastName: user.lastname,
+                    email: user.email,
+                    phone: user.phone,
+                },
             },
         });
     }

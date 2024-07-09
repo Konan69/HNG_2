@@ -19,7 +19,7 @@ app.post(
   "/auth/register",
   validateUser(userRegisterSchema),
   async (req, res) => {
-    const { firstname, lastname, email, password, phone } = req.body;
+    const { firstName, lastName, email, password, phone } = req.body;
 
     // Check if the email already exists
     const existingUser = await prisma.user.findUnique({
@@ -38,8 +38,8 @@ app.post(
       const hashedPassword = await bcryptjs.hash(password, salt);
 
       const userData = {
-        firstname,
-        lastname,
+        firstname: firstName,
+        lastname: lastName,
         email,
         password: hashedPassword,
         phone,
@@ -58,8 +58,8 @@ app.post(
 
       // Create the default organization for the user
       const orgData = {
-        name: `${firstname}'s Organisation`,
-        description: `Default organisation for ${firstname}`,
+        name: `${firstName}'s Organisation`,
+        description: `Default organisation for ${firstName}`,
         createdBy: user.userId,
         users: {
           connect: { userId: user.userId },
@@ -85,7 +85,13 @@ app.post(
         message: "Registration successful",
         data: {
           accessToken: accessToken,
-          user: user,
+          user: {
+            userId: user.userId,
+            firstName: user.firstname,
+            lastName: user.lastname,
+            email: user.email,
+            phone: user.phone,
+          },
         },
       });
     } catch (error) {
