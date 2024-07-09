@@ -102,10 +102,10 @@ describe("User Login", () => {
     const response = await request(app)
       .post("/auth/login")
       .send(loginData)
-      .expect(403);
+      .expect(401);
 
     expect(response.body.status).toBe("Bad request");
-    expect(response.body.message).toBe("Invalid login credentials.");
+    expect(response.body.message).toBe("Authentication failed");
   });
 });
 describe("Validation", () => {
