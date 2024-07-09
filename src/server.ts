@@ -107,7 +107,9 @@ app.post(
 app.post("/auth/login", validateUser(userLoginSchema), async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    res.status(400).send({ status: "Bad request" });
+    res
+      .status(401)
+      .send({ status: "Bad request", message: "Authenticaton Failed" });
     throw new Error("You must provide an email and a password.");
   }
   const user = await prisma.user.findUnique({
@@ -119,15 +121,18 @@ app.post("/auth/login", validateUser(userLoginSchema), async (req, res) => {
 
   if (!user) {
     res
-      .status(403)
-      .send({ status: "Bad request", message: "Invalid login credentials." });
+      .status(401)
+      .send({ status: "Bad request", message: "Authentication failed" });
     return;
   }
   const validPassword = await bcryptjs.compare(
     req.body.password,
     user.password,
   );
-  if (!validPassword) return res.status(401).send("invalid email or password");
+  if (!validPassword)
+    return res
+      .status(401)
+      .send({ status: "Bad request", message: "Authentication failed" });
 
   try {
     console.log(user);
@@ -315,8 +320,8 @@ app.get("/api/organisations", requireAuth, async (req: any, res: any) => {
   } catch (error) {
     console.error("Error fetching user's organisations:", error);
     res.status(500).send({
-      status: "error",
-      message: "An error occurred while fetching user's organisations",
+      status: "Bad Request",
+      message: "error occurred while fetching user's organisations",
     });
   }
 });

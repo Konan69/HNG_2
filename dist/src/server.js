@@ -100,7 +100,9 @@ app.post("/auth/register", (0, middleware_1.validateUser)(joi_1.userRegisterSche
 app.post("/auth/login", (0, middleware_1.validateUser)(joi_1.userLoginSchema), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, password } = req.body;
     if (!email || !password) {
-        res.status(400).send({ status: "Bad request" });
+        res
+            .status(401)
+            .send({ status: "Bad request", message: "Authenticaton Failed" });
         throw new Error("You must provide an email and a password.");
     }
     const user = yield exports.prisma.user.findUnique({
@@ -111,13 +113,15 @@ app.post("/auth/login", (0, middleware_1.validateUser)(joi_1.userLoginSchema), (
     });
     if (!user) {
         res
-            .status(403)
-            .send({ status: "Bad request", message: "Invalid login credentials." });
+            .status(401)
+            .send({ status: "Bad request", message: "Authentication failed" });
         return;
     }
     const validPassword = yield bcryptjs_1.default.compare(req.body.password, user.password);
     if (!validPassword)
-        return res.status(401).send("invalid email or password");
+        return res
+            .status(401)
+            .send({ status: "Bad request", message: "Authentication failed" });
     try {
         console.log(user);
         return res.status(200).send({
@@ -279,8 +283,8 @@ app.get("/api/organisations", jwt_1.requireAuth, (req, res) => __awaiter(void 0,
     catch (error) {
         console.error("Error fetching user's organisations:", error);
         res.status(500).send({
-            status: "error",
-            message: "An error occurred while fetching user's organisations",
+            status: "Bad Request",
+            message: "error occurred while fetching user's organisations",
         });
     }
 }));
