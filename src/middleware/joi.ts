@@ -2,10 +2,10 @@
 import Joi from "joi";
 
 export const userRegisterSchema = Joi.object({
-  firstname: Joi.string().required().messages({
+  firstName: Joi.string().required().messages({
     "string.empty": "First name is required",
   }),
-  lastname: Joi.string().required().messages({
+  lastName: Joi.string().required().messages({
     "string.empty": "Last name is required",
   }),
   email: Joi.string().email().required().messages({

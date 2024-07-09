@@ -7,10 +7,10 @@ exports.createOrgSchema = exports.userLoginSchema = exports.userRegisterSchema =
 // validation.js
 const joi_1 = __importDefault(require("joi"));
 exports.userRegisterSchema = joi_1.default.object({
-    firstname: joi_1.default.string().required().messages({
+    firstName: joi_1.default.string().required().messages({
         "string.empty": "First name is required",
     }),
-    lastname: joi_1.default.string().required().messages({
+    lastName: joi_1.default.string().required().messages({
         "string.empty": "Last name is required",
     }),
     email: joi_1.default.string().email().required().messages({
